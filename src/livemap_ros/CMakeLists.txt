@@ -30,7 +30,7 @@ generate_messages(DEPENDENCIES std_msgs)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(Navlab src/navlab.cpp src/utils.cpp ${catkin_LIBRARIES})
-target_link_libraries(Navlab ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PAHO_MQTT_CPP} ${PAHO_MQTT} ${RapidJSON})
+target_link_libraries(Navlab ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PAHO_MQTT_CPP} ${PAHO_MQTT} ${RapidJSON} -lpqxx -lpq)
 
 add_executable(talker src/talker.cpp)
 target_link_libraries(talker ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PAHO_MQTT_CPP} ${PAHO_MQTT} ${RapidJSON})

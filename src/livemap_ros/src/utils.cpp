@@ -215,6 +215,54 @@ void Utils::parseDriveJSON(std::string &sendMessage, DrivingCompleteMessage &msg
     return;
 }
 
+// ADD: database 
+// Parse the Database Config JSON file
+// When complete, DatabaseContainer will contain all the required information
+void Utils::parseDatabaseConfig(DatabaseContainer &db, const std::string &filename)
+{   
+    
+    /* //Format for command
+    "dbname = gis user = osm password = vehicle2016 \
+      hostaddr = 127.0.0.1 port = 5432"
+      */
+     /*
+    std::string dbCommand_;
+    std::string dbName_;
+    std::string dbUser_;
+    std::string dbPort_;
+    std::string dbHost_;
+    std::string dbPass_;
+    */
+    rapidjson::Document d;
+    // Read file into std::string
+    std::ifstream input(filename);
+    std::string file((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+
+    d.Parse(file);
+    
+    assert(d.HasMember("dbname"));
+    db.dbName_ = d["dbname"].GetString();
+    db.dbCommand_ = "dbname = " + db.dbName_ + " ";
+
+    assert(d.HasMember("user"));
+    db.dbUser_ = d["user"].GetString();
+    db.dbCommand_ += "user = " + db.dbUser_ + " ";
+
+    assert(d.HasMember("password"));
+    db.dbPass_ = d["password"].GetString();
+    db.dbCommand_ += "password = " + db.dbPass_ + " ";
+
+    assert(d.HasMember("hostaddr"));
+    db.dbHost_ = d["hostaddr"].GetString();
+    db.dbCommand_ += "hostaddr = " + db.dbHost_ + " ";
+
+    assert(d.HasMember("port"));
+    db.dbPort_ = d["port"].GetString();
+    db.dbCommand_ += "port = " + db.dbPort_;
+
+    return;
+}
+
 
 std::string Utils::bool_to_string(bool value)
 {

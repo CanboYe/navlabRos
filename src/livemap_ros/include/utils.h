@@ -1,5 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
+
+// #define RAPIDJSON_HAS_STDSTRING 1
+
 #include <opencv2/opencv.hpp>
 #include <cstring>
 #include <sstream>
@@ -11,6 +14,7 @@
 #include "rapidjson/prettywriter.h"
 //#include <libwebsockets.h> not needed
 
+#include "settings.h"
 /////////////////////////////////////////////////////////////////////////////
 //Messages//
 /////////////////////////////////////////////////////////////////////////////
@@ -99,6 +103,10 @@ void parseDriveJSON(std::string &sendMessage, DrivingCompleteMessage &msg);
 void makeDetectionJSON(std::string &sendMessage, DetectionMessage &msg);
 void parseDetectionJSON(std::string &sendMessage, DetectionMessage &msg);
 void encodeThisImage(cv::Mat image, std::string &encodedIm);
+
+void parseDatabaseConfig(DatabaseContainer &db, 
+                         const std::string &filename = DB_CONFIG);
+
 template <typename T>
 inline std::string to_string_precision(const T a_value, const int n = 10)
 {

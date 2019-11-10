@@ -1,0 +1,7 @@
+{
+    "dbname": "testdb",
+    "user": "osm",
+    "password": "vehicle2016",
+    "hostaddr": "127.0.0.1",
+    "port": "5432"
+}

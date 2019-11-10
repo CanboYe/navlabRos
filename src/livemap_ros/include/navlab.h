@@ -36,6 +36,8 @@
 #include <ctime>
 
 #include "utils.h"
+#include "settings.h"
+#include <pqxx/pqxx>
 
 const std::string DFLT_SERVER_ADDRESS	{ "tcp://squall.elijah.cs.cmu.edu:1883" };
 const std::string DFLT_CLIENT_ID		{ "async_publish" };
@@ -129,7 +131,10 @@ class Navlab{
         void writeToVideo();
 
         double measureDistance(double lat1, double lon1, double lat2, double lon2);
-
+        int insertHazard(DetectionMessage &msg);
+        int selectHazard(DetectionMessage &msg);
+        double get_dLat(double lat1, double lon1, double distance);
+        double get_dLon(double lat1, double lon1, double distance);
 
     private:
         //ROS member variables
@@ -181,8 +186,11 @@ class Navlab{
         mqtt::token_ptr m_conntok;
         
         clock_t m_startTime; 
-        
 
+        // Database related
+        DatabaseContainer m_HazardDB;
+        int m_numInsertions;
+        int m_numReceived;
         
 
 

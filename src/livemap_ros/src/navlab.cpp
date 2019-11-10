@@ -11,6 +11,9 @@ Navlab::Navlab(ros::NodeHandle &n)
       m_LatLastDetection(0.),m_LongLastDetection(0.),
       m_numDetections(0), m_HAZARD_TOPIC("HAZARDS_DETECTED"), m_DRIVE_TOPIC("DRIVE")
 {
+    // ADD: initialize databaseContainer
+    Utils::parseDatabaseConfig(m_HazardDB);
+
     // Get roslaunch param _directory
     m_nodeHandle.getParam("directory", m_workingDirectory);
 
@@ -145,11 +148,7 @@ void Navlab::detectionImageCallback(const sensor_msgs::ImageConstPtr &msg)
 
     if(abs(m_distFromLastSend) > 1.0)
     {
-        cv::imshow(OPENCV_WINDOW2, cv_ptr->image);
-        cv::waitKey(3);
-        //*m_lastDetection = cv_ptr->image.clone();
-        std::string filename = m_workingDirectory + "/detections/" + std::to_string(m_numDetections) + ".jpg";
-        cv::imwrite(filename, cv_ptr->image);
+        
 
         m_numDetections++;
         std::string encodedIm;
@@ -180,33 +179,179 @@ void Navlab::detectionImageCallback(const sensor_msgs::ImageConstPtr &msg)
         s.IsActive_= true;
         s.IsVirtual_=false;
 
-        Utils::makeDetectionJSON(message,s);
-        mqtt::message_ptr pubmsg = mqtt::make_message(m_HAZARD_TOPIC, message);
+        if (!this->selectHazard(s))
+        {   
+            cv::imshow(OPENCV_WINDOW2, cv_ptr->image);
+            cv::waitKey(3);
+            //*m_lastDetection = cv_ptr->image.clone();
+            std::string filename = m_workingDirectory + "/detections/" + std::to_string(m_numDetections) + ".jpg";
+            cv::imwrite(filename, cv_ptr->image);
 
-        //action_listener alistener; //added line
+            this->insertHazard(s);
 
-        int qos = 1;
-        pubmsg->set_qos(qos);
-	    m_client->publish(pubmsg);//->wait_for(TIMEOUT);
-	    cout << "Sent Image # " << m_numDetections << endl;
-        m_LatLastDetection = m_navLat;
-        m_LongLastDetection = m_navLong;
+            Utils::makeDetectionJSON(message,s);
+            mqtt::message_ptr pubmsg = mqtt::make_message(m_HAZARD_TOPIC, message);
+
+            //action_listener alistener; //added line
+
+            int qos = 1;
+            pubmsg->set_qos(qos);
+            m_client->publish(pubmsg);//->wait_for(TIMEOUT);
+            cout << "Sent Image # " << m_numDetections << endl;
+            m_LatLastDetection = m_navLat;
+            m_LongLastDetection = m_navLong;
+        }
+        else
+        {
+            std::cout << "Detection exists!!!" << std::endl;
+        }
+        
         
     }
-    else{
+    // else{
         
         //cv::imshow(OPENCV_WINDOW2, *m_lastDetection);
         //cv::waitKey(3);
-        cv::imshow(OPENCV_WINDOW3, cv_ptr->image);
-        cv::waitKey(3);
+    cv::imshow(OPENCV_WINDOW3, cv_ptr->image);
+    cv::waitKey(3);
         
-    }
+    // }
     
     //Write image to file, make video of it later
     
 
     return;
 }
+
+int Navlab::selectHazard(DetectionMessage &msg)
+{
+    std::cout << "####### selecting hazard #######" << std::endl;
+    std::string sqlSelect;
+    try
+    {
+        pqxx::connection C(m_HazardDB.dbCommand_);
+
+        if (C.is_open())
+        {
+            std::cout << "#######Opened database successfully: " << C.dbname() << std::endl;
+        }
+        else
+        {
+            std::cout << "Can't open database" << std::endl;
+            return 1;
+        }
+        double distance = 1;//meter
+        double dLat = this->get_dLat(msg.Latitude_, msg.Longitude_, distance);
+        double dLon = this->get_dLon(msg.Latitude_, msg.Longitude_, distance);
+        double dist_jud1 = this-> measureDistance( msg.Latitude_,  msg.Longitude_, msg.Latitude_ - abs(dLat), msg.Longitude_);
+        double dist_jud2 = this-> measureDistance( msg.Latitude_,  msg.Longitude_, msg.Latitude_, msg.Longitude_ - abs(dLon));
+        std::cout << std::endl << "#### dLat =  " <<  dLat << ",  dLon =  " <<  dLon << ", dist = " << dist_jud1 << ", dist = " << dist_jud2 << std::endl;
+        
+        sqlSelect = "SELECT count(*) FROM hazards WHERE"\
+                    " latitude BETWEEN " + Utils::to_string_precision(msg.Latitude_ - abs(dLat)) + " AND " + Utils::to_string_precision(msg.Latitude_ + abs(dLat)) +
+                    " AND longitude BETWEEN " + Utils::to_string_precision(msg.Longitude_ - abs(dLon)) + " AND " + Utils::to_string_precision(msg.Longitude_ + abs(dLon));
+        std::cout << sqlSelect << std::endl;
+        pqxx::nontransaction N(C);
+
+        pqxx::result R(N.exec(sqlSelect));
+        // for (pqxx::result::const_iterator c = R.begin(); c != R.end(); ++c) 
+        // {
+        std::cout << "#### The select result is " <<  R[0][0].as<int>() << std::endl;
+        // }
+
+        
+        if (R[0][0].as<int>() != 0)
+        {
+            C.disconnect();
+            return 1;//exist
+        } 
+        else
+        {
+            C.disconnect();
+            return 0;
+        }
+        return 0;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return 0;
+    }
+    m_numInsertions++;
+    return 1;
+
+}
+
+int Navlab::insertHazard(DetectionMessage &msg)
+{
+    std::cout << "inserting hazard" << std::endl;
+    std::string sqlInsert;
+
+    try
+    {
+        pqxx::connection C(m_HazardDB.dbCommand_);
+
+        if (C.is_open())
+        {
+            std::cout << "Opened database successfully: " << C.dbname() << std::endl;
+        }
+        else
+        {
+            std::cout << "Can't open database" << std::endl;
+            return 1;
+        }
+        std::string imageLocation = "frame" + std::to_string(m_numReceived) + ".jpg";
+        m_numReceived++;
+        std::cout << Utils::to_string_precision(msg.Latitude_) << std::endl;
+        std::cout << Utils::to_string_precision(msg.Longitude_) << std::endl;
+
+        /* Create SQL statement */
+        sqlInsert = "INSERT INTO HAZARDS (ID_NUMBER, HAZARD_ID, TYPE, LATITUDE, LONGITUDE, HAZARD_BOUNDING_BOX," \
+        "DATE, TIMESTAMP_SENT, TIMESTAMP_RECEIVED, LATENCY, ACTIVE, VIRTUAL, USER_ID, DRIVE_ID, IMAGE, IMAGE_ID)";
+        sqlInsert += "VALUES (DEFAULT, '" + msg.HazardID_ + "', '" + msg.HazardType_ + "', " + Utils::to_string_precision(msg.Latitude_) + ", " +
+        Utils::to_string_precision(msg.Longitude_) + ", '{" + std::to_string(msg.HazardBoundingBox_[0]) + ", " + 
+        std::to_string(msg.HazardBoundingBox_[1]) + ", " + std::to_string(msg.HazardBoundingBox_[2]) + ", " +
+        std::to_string(msg.HazardBoundingBox_[3]) + "}', '" + msg.Date_ + "', " + Utils::to_string_precision(msg.TimestampSent_) + ", " + 
+        Utils::to_string_precision(msg.TimestampReceived_) + ", " + Utils::to_string_precision(msg.Latency_) + ", " + Utils::bool_to_string(msg.IsActive_) + ", " + 
+        Utils::bool_to_string(msg.IsVirtual_) + ", '" + msg.UserID_ + "', '" + msg.DriveID_ + "', '" + imageLocation + "', '" + msg.ImageID_ + "');";
+        
+        //DEBUG_STDOUT(sqlInsert);
+
+        /* Create a transactional object. */
+        pqxx::work W(C);
+
+        /* Execute SQL query */
+        W.exec(sqlInsert);
+        W.commit();
+        std::cout << "Records created successfully" << std::endl;
+        C.disconnect();
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return 0;
+    }
+    m_numInsertions++;
+    return 1;
+}
+
+double Navlab::get_dLat(double lat1, double lon1, double distance)
+{
+    double R = 6378.137; // Radius of earth in KM
+    distance = distance / 1000;
+    double dlat = (distance / R) * 180 / M_PI;
+    return dlat;
+}
+
+double Navlab::get_dLon(double lat1, double lon1, double distance)
+{
+    double R = 6378.137; // Radius of earth in KM
+    distance = distance / 1000;
+    double dlon = 2 * asin( sin(distance/(2*R)) / cos(lat1) );
+    dlon = dlon * 180 / M_PI;
+    return dlon;
+}
+
 
 double Navlab::measureDistance(double lat1, double lon1, double lat2, double lon2)
 {
