@@ -59,17 +59,17 @@ void detectionCallback::on_failure(const mqtt::token &tok)
 }
 
 // Re-connection success
-void detectionCallback::on_success(const mqtt::token &tok)
-{
-    std::cout << "\nConnection success" << std::endl;
-    std::cout << "\nSubscribing to topic '" << TOPIC << "'\n"
-              << "\tfor client " << CLIENT_ID
-              << " using QoS" << QOS << "\n"
-              << "\nPress Q<Enter> to quit\n"
-              << std::endl;
+// void detectionCallback::on_success(const mqtt::token &tok)
+// {
+//     std::cout << "\nConnection success" << std::endl;
+//     std::cout << "\nSubscribing to topic '" << TOPIC << "'\n"
+//               << "\tfor client " << CLIENT_ID
+//               << " using QoS" << QOS << "\n"
+//               << "\nPress Q<Enter> to quit\n"
+//               << std::endl;
 
-    cli_->subscribe(TOPIC, QOS, nullptr, subListener_);
-}
+//     cli_->subscribe(TOPIC, QOS, nullptr, subListener_);
+// }
 
 
 
@@ -98,13 +98,13 @@ void detectionCallback::message_arrived(mqtt::const_message_ptr msg)
     Utils::parseDetectionJSON(detectionJSON, dmessage);
     
     //std::cout << dmessage.ImageID_ << std::endl;
-    const std::string toDecode = dmessage.Image_;
-    dmessage.Image_ = Utils::base64_decode(toDecode);
-    std::vector<uchar> vectordata(dmessage.Image_.begin(),
-                                        dmessage.Image_.end());
-		//Convert buffer to Mat
-    //std::cout << dmessage.Image_ << std::endl;
-    cv::Mat img = cv::imdecode(vectordata, CV_LOAD_IMAGE_COLOR);
+    // const std::string toDecode = dmessage.Image_;
+    // dmessage.Image_ = Utils::base64_decode(toDecode);
+    // std::vector<uchar> vectordata(dmessage.Image_.begin(),
+    //                                     dmessage.Image_.end());
+	// 	//Convert buffer to Mat
+    // //std::cout << dmessage.Image_ << std::endl;
+    // cv::Mat img = cv::imdecode(vectordata, CV_LOAD_IMAGE_COLOR);
 
     //saveImage and insert the hazard
     // m_Navlab->saveImage(img);
@@ -118,6 +118,9 @@ void detectionCallback::message_arrived(mqtt::const_message_ptr msg)
     {
         std::cout << "duplicated detection messages++++" << std::endl<< std::endl;
     }
+    // std::cout << "Message arrived" << std::endl;
+    // std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
+    // std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
 }
 
 void detectionCallback::delivery_complete(mqtt::delivery_token_ptr token) 

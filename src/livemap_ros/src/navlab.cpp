@@ -68,6 +68,7 @@ Navlab::Navlab(ros::NodeHandle &n)
     string	address  = SERVER_ADDRESS,
 			clientID = CLIENT_ID;
     string TOPIC_sub("NEW_HAZARDS_DETECTED");
+    // string TOPIC_sub("hello");
 	int QOS = 1;
 	int N_RETRY_ATTEMPTS = 5;
 	//Begin MQTT code for testing
@@ -81,13 +82,14 @@ Navlab::Navlab(ros::NodeHandle &n)
 	m_client =  new mqtt::async_client(address, clientID);
     
 
-    detectionCallback cb(m_client, connOpts, address, clientID, TOPIC_sub, QOS, N_RETRY_ATTEMPTS);
-    cb.setNavlab(this);
-	m_client->set_callback(cb);
+    m_cb = new detectionCallback(m_client, connOpts, address, clientID, TOPIC_sub, QOS, N_RETRY_ATTEMPTS);
+    m_cb->setNavlab(this);
+	m_client->set_callback(*m_cb);
 
   try {
 		cout << "\nConnecting..." << endl;
-		m_conntok = m_client->connect(m_conopts, nullptr, cb);
+		m_conntok = m_client->connect(m_conopts, nullptr, *m_cb);
+        // m_conntok = m_client->connect(m_conopts);
 		cout << "Waiting for the connection..." << endl;
 		m_conntok->wait();
 		cout << "  ...OK" << endl;
@@ -497,12 +499,13 @@ void Navlab::navlabGPSCallback(const sensor_msgs::NavSatFixConstPtr &fix)
 void Navlab::runROS()
 {
     // main ROS loop
-//     ros::Rate r(10);
-//     while (ros::ok())
-//    {
-//         ros::spinOnce();
-//         r.sleep();
-//    }
+    // ros::Rate r(10);
+    // while (ros::ok())
+    // {
+        // std::cout<<"Came here 2"<<std::endl;
+        // ros::spinOnce();
+        // r.sleep();
+    // }
     std::cout<<"Came here 1"<<std::endl;
     ros::spin();
 }

@@ -38,22 +38,7 @@
 #include "utils.h"
 #include "settings.h"
 #include <pqxx/pqxx>
-
-// const std::string DFLT_SERVER_ADDRESS	{ "tcp://squall.elijah.cs.cmu.edu:1883" };
-// const std::string DFLT_CLIENT_ID		{ "async_publish" };
-
-// const std::string TOPIC { "HAZARDS_DETECTED" };
-
-// const char* PAYLOAD1 = "Hello World!";
-// const char* PAYLOAD2 = "Hi there!";
-// const char* PAYLOAD3 = "Is anyone listening?";
-// const char* PAYLOAD4 = "Someone is always listening.";
-
-// const char* LWT_PAYLOAD = "Last will and testament.";
-
-// const int  QOS = 1;
-
-// const auto TIMEOUT = std::chrono::seconds(10);
+#include "navlabListener.h"
 
 using namespace std;
 
@@ -126,6 +111,7 @@ class Navlab{
         // callback m_cb;
         mqtt::connect_options m_conopts;
         mqtt::token_ptr m_conntok;
+        detectionCallback* m_cb;
         
         clock_t m_startTime; 
 

@@ -70,22 +70,22 @@ private:
   void on_failure(const mqtt::token &tok) override;
 
   // Re-connection success
-  void on_success(const mqtt::token &tok) override;
+//   void on_success(const mqtt::token &tok) override;
 
-    // // (Re)connection success
-    // // Either this or connected() can be used for callbacks.
-    // void on_success(const mqtt::token& tok) override {}
+    // (Re)connection success
+    // Either this or connected() can be used for callbacks.
+    void on_success(const mqtt::token& tok) override {}
 
-    // // (Re)connection success
-    // void connected(const std::string& cause) override {
-    //     std::cout << "\nConnection success" << std::endl;
-    //     std::cout << "\nSubscribing to topic '" << TOPIC << "'\n"
-    //         << "\tfor client " << CLIENT_ID
-    //         << " using QoS" << QOS << "\n"
-    //         << "\nPress Q<Enter> to quit\n" << std::endl;
+    // (Re)connection success
+    void connected(const std::string& cause) override {
+        std::cout << "\nConnection success" << std::endl;
+        std::cout << "\nSubscribing to topic '" << TOPIC << "'\n"
+            << "\tfor client " << CLIENT_ID
+            << " using QoS" << QOS << "\n"
+            << "\nPress Q<Enter> to quit\n" << std::endl;
 
-    //     cli_.subscribe(TOPIC, QOS, nullptr, subListener_);
-    // }
+        cli_->subscribe(TOPIC, QOS, nullptr, subListener_);
+    }
 
   // Callback for when the connection is lost.
   // This will initiate the attempt to manually reconnect.
