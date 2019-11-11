@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(livemap_ros)
-
+SET(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_CXX_FLAGS "-g")
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
 
@@ -29,7 +30,7 @@ generate_messages(DEPENDENCIES std_msgs)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_library(Navlab src/navlab.cpp src/utils.cpp ${catkin_LIBRARIES})
+add_library(Navlab src/navlab.cpp src/utils.cpp src/navlabListener.cpp ${catkin_LIBRARIES})
 target_link_libraries(Navlab ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PAHO_MQTT_CPP} ${PAHO_MQTT} ${RapidJSON} -lpqxx -lpq)
 
 add_executable(talker src/talker.cpp)

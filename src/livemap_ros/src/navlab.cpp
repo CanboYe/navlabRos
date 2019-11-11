@@ -1,4 +1,5 @@
 #include "navlab.h"
+#include "navlabListener.h"
 #include <math.h>
 #include <stdlib.h>  
 
@@ -66,19 +67,27 @@ Navlab::Navlab(ros::NodeHandle &n)
 
     string	address  = SERVER_ADDRESS,
 			clientID = CLIENT_ID;
+    string TOPIC_sub("NEW_HAZARDS_DETECTED");
+	int QOS = 1;
+	int N_RETRY_ATTEMPTS = 5;
+	//Begin MQTT code for testing
+
+	mqtt::connect_options connOpts;
+	connOpts.set_keep_alive_interval(20);
+	connOpts.set_clean_session(true);
+    m_conopts = connOpts;
 
 	cout << "Initializing for server '" << address << "'..." << endl;
 	m_client =  new mqtt::async_client(address, clientID);
-
-
-	m_client->set_callback(m_cb);
     
 
-	
-    m_conopts.set_keep_alive_interval(20);
+    detectionCallback cb(m_client, connOpts, address, clientID, TOPIC_sub, QOS, N_RETRY_ATTEMPTS);
+    cb.setNavlab(this);
+	m_client->set_callback(cb);
+
   try {
 		cout << "\nConnecting..." << endl;
-		m_conntok = m_client->connect(m_conopts);
+		m_conntok = m_client->connect(m_conopts, nullptr, cb);
 		cout << "Waiting for the connection..." << endl;
 		m_conntok->wait();
 		cout << "  ...OK" << endl;
@@ -118,7 +127,7 @@ void Navlab::rawImageCallback(const sensor_msgs::ImageConstPtr &msg)
     std::string filename = m_frameDirectory + "/frame" + std::to_string(m_numRawImages) + ".jpg";
     cv::imwrite(filename, cv_ptr->image);
     m_numRawImages++;
-    logGPS(m_navLat , m_navLong);
+    // logGPS(m_navLat , m_navLong);
     return;
 }
 
@@ -197,13 +206,13 @@ void Navlab::detectionImageCallback(const sensor_msgs::ImageConstPtr &msg)
             int qos = 1;
             pubmsg->set_qos(qos);
             m_client->publish(pubmsg);//->wait_for(TIMEOUT);
-            cout << "Sent Image # " << m_numDetections << endl;
+            cout << "Sent Image # " << m_numDetections << endl<< std::endl;
             m_LatLastDetection = m_navLat;
             m_LongLastDetection = m_navLong;
         }
         else
         {
-            std::cout << "Detection exists!!!" << std::endl;
+            std::cout << "Detection exists!!!" << std::endl<< std::endl;
         }
         
         
@@ -233,7 +242,7 @@ int Navlab::selectHazard(DetectionMessage &msg)
 
         if (C.is_open())
         {
-            std::cout << "#######Opened database successfully: " << C.dbname() << std::endl;
+            // std::cout << "#######Opened database successfully: " << C.dbname() << std::endl;
         }
         else
         {
@@ -245,7 +254,7 @@ int Navlab::selectHazard(DetectionMessage &msg)
         double dLon = this->get_dLon(msg.Latitude_, msg.Longitude_, distance);
         double dist_jud1 = this-> measureDistance( msg.Latitude_,  msg.Longitude_, msg.Latitude_ - abs(dLat), msg.Longitude_);
         double dist_jud2 = this-> measureDistance( msg.Latitude_,  msg.Longitude_, msg.Latitude_, msg.Longitude_ - abs(dLon));
-        std::cout << std::endl << "#### dLat =  " <<  dLat << ",  dLon =  " <<  dLon << ", dist = " << dist_jud1 << ", dist = " << dist_jud2 << std::endl;
+        // std::cout << "#### dLat =  " <<  dLat << ",  dLon =  " <<  dLon << ", dist = " << dist_jud1 << ", dist = " << dist_jud2 << std::endl;
         
         sqlSelect = "SELECT count(*) FROM hazards WHERE"\
                     " latitude BETWEEN " + Utils::to_string_precision(msg.Latitude_ - abs(dLat)) + " AND " + Utils::to_string_precision(msg.Latitude_ + abs(dLat)) +
@@ -488,11 +497,14 @@ void Navlab::navlabGPSCallback(const sensor_msgs::NavSatFixConstPtr &fix)
 void Navlab::runROS()
 {
     // main ROS loop
-    //while (ros::ok())
-   // {
-        ros::spin();
-       // m_loop_rate.sleep();
-   // }
+//     ros::Rate r(10);
+//     while (ros::ok())
+//    {
+//         ros::spinOnce();
+//         r.sleep();
+//    }
+    std::cout<<"Came here 1"<<std::endl;
+    ros::spin();
 }
 
 void Navlab::writeToVideo()
