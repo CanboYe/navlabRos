@@ -236,7 +236,7 @@ void Navlab::detectionImageCallback(const sensor_msgs::ImageConstPtr &msg)
 
 int Navlab::selectHazard(DetectionMessage &msg)
 {
-    std::cout << "####### selecting hazard #######" << std::endl;
+    // std::cout << "####### selecting hazard #######" << std::endl;
     std::string sqlSelect;
     try
     {

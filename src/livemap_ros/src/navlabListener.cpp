@@ -97,7 +97,7 @@ void detectionCallback::message_arrived(mqtt::const_message_ptr msg)
     DetectionMessage dmessage;
     Utils::parseDetectionJSON(detectionJSON, dmessage);
     
-    //std::cout << dmessage.ImageID_ << std::endl;
+    // std::cout << dmessage.ImageID_ << std::endl;
     // const std::string toDecode = dmessage.Image_;
     // dmessage.Image_ = Utils::base64_decode(toDecode);
     // std::vector<uchar> vectordata(dmessage.Image_.begin(),
@@ -106,9 +106,14 @@ void detectionCallback::message_arrived(mqtt::const_message_ptr msg)
     // //std::cout << dmessage.Image_ << std::endl;
     // cv::Mat img = cv::imdecode(vectordata, CV_LOAD_IMAGE_COLOR);
 
-    //saveImage and insert the hazard
+    // saveImage and insert the hazard
     // m_Navlab->saveImage(img);
-
+    
+    std::cout << "Message arrived" << std::endl;
+    // std::cout << "LAT,LON = "<<dmessage.Latitude_ <<","<<dmessage.Longitude_<<std::endl;
+    // std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
+    // std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
+    // std::cout << "\tJSON: '" << detectionJSON << "'\n" << std::endl;
     //determine if the hazard is new
     if (!m_Navlab->selectHazard(dmessage))
     {
@@ -116,11 +121,9 @@ void detectionCallback::message_arrived(mqtt::const_message_ptr msg)
     }
     else
     {
-        std::cout << "duplicated detection messages++++" << std::endl<< std::endl;
+        std::cout << "Zone sent a duplicated detection message----" << std::endl<< std::endl;
     }
-    // std::cout << "Message arrived" << std::endl;
-    // std::cout << "\ttopic: '" << msg->get_topic() << "'" << std::endl;
-    // std::cout << "\tpayload: '" << msg->to_string() << "'\n" << std::endl;
+
 }
 
 void detectionCallback::delivery_complete(mqtt::delivery_token_ptr token) 

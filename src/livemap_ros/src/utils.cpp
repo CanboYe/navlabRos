@@ -88,7 +88,7 @@ void Utils::parseDetectionJSON(std::string &sendMessage, DetectionMessage &msg)
 
     assert(d.HasMember("IsVirtual"));
     assert(d["IsVirtual"].IsBool());
-    msg.Latitude_ = d["IsVirtual"].GetBool();
+    msg.IsVirtual_ = d["IsVirtual"].GetBool();
 
     const rapidjson::Value& hb = d["HazardBoundingBox"];
     assert(hb.IsArray());
