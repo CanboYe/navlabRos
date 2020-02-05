@@ -16,8 +16,8 @@ Navlab::Navlab(ros::NodeHandle &n)
     Utils::parseDatabaseConfig(m_HazardDB);
 
     // Get roslaunch param _directory
-    m_nodeHandle.getParam("directory", m_workingDirectory);
-
+    // m_nodeHandle.getParam("directory", m_workingDirectory);
+    m_workingDirectory = "/home/cloudlet/Downloads/output";
     m_frameDirectory = m_workingDirectory + "/frame";
     const char *c_frameDirectory = m_frameDirectory.c_str();
     mkdir(c_frameDirectory, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -156,7 +156,9 @@ void Navlab::detectionImageCallback(const sensor_msgs::ImageConstPtr &msg)
     }
 
     m_distFromLastSend = this->measureDistance(m_navLat,m_navLong,m_LatLastDetection, m_LongLastDetection);
-
+    std::string filename = m_workingDirectory + "/detections/" + std::to_string(m_numDetections) + ".jpg";
+    cv::imwrite(filename, cv_ptr->image);
+    
     if(abs(m_distFromLastSend) > 1.0)
     {
         
@@ -195,8 +197,8 @@ void Navlab::detectionImageCallback(const sensor_msgs::ImageConstPtr &msg)
             cv::imshow(OPENCV_WINDOW2, cv_ptr->image);
             cv::waitKey(3);
             //*m_lastDetection = cv_ptr->image.clone();
-            std::string filename = m_workingDirectory + "/detections/" + std::to_string(m_numDetections) + ".jpg";
-            cv::imwrite(filename, cv_ptr->image);
+            // std::string filename = m_workingDirectory + "/detections/" + std::to_string(m_numDetections) + ".jpg";
+            // cv::imwrite(filename, cv_ptr->image);
 
             this->insertHazard(s);
 
